@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+   name: cahbo-myapp
+spec:
+  selector:
+     matchLabels:
+       run: cahbo-myapp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+       run: cahbo-myapp
+    spec:
+      containers:
+      - args:
+        - sh
+        - -c
+        - fabric-ca-server start --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.hbo-myapp-cert.pem
+          --ca.keyfile /etc/hyperledger/fabric-ca-server-config/42c180f8b8d39358430a835be5d7bb68a34879cc20c2e18f0508822d2f84b80e_sk
+          -b admin:adminpw -d
+        env:
+        - name: FABRIC_CA_HOME
+          value: /etc/hyperledger/fabric-ca-server
+        - name: FABRIC_CA_SERVER_CA_NAME
+          value: ca-hbo
+        - name: FABRIC_CA_SERVER_TLS_CERTFILE
+          value: /etc/hyperledger/fabric-ca-server-config/ca.hbo-myapp-cert.pem
+        - name: FABRIC_CA_SERVER_TLS_ENABLED
+          value: "true"
+        - name: FABRIC_CA_SERVER_TLS_KEYFILE
+          value: /etc/hyperledger/fabric-ca-server-config/42c180f8b8d39358430a835be5d7bb68a34879cc20c2e18f0508822d2f84b80e_sk
+        - name: CORE_VM_DOCKER_HOSTCONFIG_DNS
+          value: 10.11.240.10
+        image: hyperledger/fabric-ca
+        name: ca-peerhbo
+        ports:
+        - containerPort: 7054
+        resources: {}
+        volumeMounts:
+        - name: my-pvc-nfs
+          mountPath: /etc/hyperledger/fabric-ca-server-config
+          subPath: crypto-config/peerOrganizations/hbo-myapp/ca
+      restartPolicy: Always
+      volumes:
+      - name: my-pvc-nfs
+        persistentVolumeClaim:
+          claimName: nfs

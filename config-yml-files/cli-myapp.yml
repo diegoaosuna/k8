@@ -1,0 +1,66 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+   name: cli-myapp
+spec:
+  selector:
+     matchLabels:
+       run: cli-myapp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+       run: cli-myapp
+    spec:
+      containers:
+      - env:
+        - name: CORE_LOGGING_LEVEL
+          value: DEBUG
+        - name: CORE_PEER_ADDRESS
+          value: peer0-netflix-myapp:7051
+        - name: CORE_PEER_ID
+          value: cli
+        - name: CORE_PEER_LOCALMSPID
+          value: netflixMSP
+        - name: CORE_PEER_MSPCONFIGPATH
+          value: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/netflix-myapp/users/Admin@netflix-myapp/msp
+        - name: CORE_PEER_TLS_CERT_FILE
+          value: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/netflix-myapp/peers/peer0-netflix-myapp/tls/server.crt
+        - name: CORE_PEER_TLS_ENABLED
+          value: "true"
+        - name: CORE_PEER_TLS_KEY_FILE
+          value: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/netflix-myapp/peers/peer0-netflix-myapp/tls/server.key
+        - name: CORE_PEER_TLS_ROOTCERT_FILE
+          value: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/netflix-myapp/peers/peer0-netflix-myapp/tls/ca.crt
+        - name: CORE_VM_ENDPOINT
+          value: unix:///host/var/run/docker.sock
+        #- name: CORE_VM_ENDPOINT
+        #  value: http://35.225.43.89:2375
+        - name: CORE_VM_DOCKER_HOSTCONFIG_DNS
+          value: 10.11.240.10
+        image: hyperledger/fabric-tools
+        name: cli
+        resources: {}
+        tty: true
+        volumeMounts:
+        - name: my-pvc-nfs
+          mountPath: /var/run/docker.sock
+          subPath: run
+        - name: my-pvc-nfs
+          mountPath: /opt/gopath/src/github.com/hyperledger/fabric/examples/chaincode/go
+          subPath: chaincode
+        - name: my-pvc-nfs
+          mountPath: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto
+          subPath: crypto-config
+        - name: my-pvc-nfs
+          mountPath: /opt/gopath/src/github.com/hyperledger/fabric/peer/scripts
+          subPath: scripts
+        - name: my-pvc-nfs
+          mountPath: /opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
+          subPath: channel-artifacts
+        workingDir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+      restartPolicy: Always
+      volumes:
+      - name: my-pvc-nfs
+        persistentVolumeClaim:
+          claimName: nfs

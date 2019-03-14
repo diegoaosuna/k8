@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+   name: canetflix-myapp
+spec:
+  selector:
+     matchLabels:
+       run: canetflix-myapp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+       run: canetflix-myapp
+    spec:
+      containers:
+      - args:
+        - sh
+        - -c
+        - fabric-ca-server start --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.netflix-myapp-cert.pem
+          --ca.keyfile /etc/hyperledger/fabric-ca-server-config/f024b123dd1abaec8817bbc925f7821883f2c5ff774e08be126c0acb08e1a01f_sk
+          -b admin:adminpw -d
+        env:
+        - name: FABRIC_CA_HOME
+          value: /etc/hyperledger/fabric-ca-server
+        - name: FABRIC_CA_SERVER_CA_NAME
+          value: ca-netflix
+        - name: FABRIC_CA_SERVER_TLS_CERTFILE
+          value: /etc/hyperledger/fabric-ca-server-config/ca.netflix-myapp-cert.pem
+        - name: FABRIC_CA_SERVER_TLS_ENABLED
+          value: "true"
+        - name: FABRIC_CA_SERVER_TLS_KEYFILE
+          value: /etc/hyperledger/fabric-ca-server-config/f024b123dd1abaec8817bbc925f7821883f2c5ff774e08be126c0acb08e1a01f_sk
+        - name: CORE_VM_DOCKER_HOSTCONFIG_DNS
+          value: 10.11.240.10
+        image: hyperledger/fabric-ca
+        name: ca-peernetflix
+        ports:
+        - containerPort: 7054
+        resources: {}
+        volumeMounts:
+        - name: my-pvc-nfs
+          mountPath: /etc/hyperledger/fabric-ca-server-config
+          subPath: crypto-config/peerOrganizations/netflix-myapp/ca
+      restartPolicy: Always
+      volumes:
+      - name: my-pvc-nfs
+        persistentVolumeClaim:
+          claimName: nfs

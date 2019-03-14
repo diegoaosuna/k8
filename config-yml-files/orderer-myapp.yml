@@ -1,0 +1,61 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+   name: orderer-myapp
+spec:
+  selector:
+     matchLabels:
+       run: orderer-myapp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+       run: orderer-myapp
+    spec:
+      containers:
+      - args:
+        - orderer
+        env:
+        - name: ORDERER_GENERAL_GENESISFILE
+          value: /var/hyperledger/orderer/orderer.genesis.block
+        - name: ORDERER_GENERAL_GENESISMETHOD
+          value: file
+        - name: ORDERER_GENERAL_LISTENADDRESS
+          value: 0.0.0.0
+        - name: ORDERER_GENERAL_LOCALMSPDIR
+          value: /var/hyperledger/orderer/msp
+        - name: ORDERER_GENERAL_LOCALMSPID
+          value: OrdererMSP
+        - name: ORDERER_GENERAL_LOGLEVEL
+          value: debug
+        - name: ORDERER_GENERAL_TLS_CERTIFICATE
+          value: /var/hyperledger/orderer/tls/server.crt
+        - name: ORDERER_GENERAL_TLS_ENABLED
+          value: "true"
+        - name: ORDERER_GENERAL_TLS_PRIVATEKEY
+          value: /var/hyperledger/orderer/tls/server.key 
+        - name: ORDERER_GENERAL_TLS_ROOTCAS
+          value: '[/var/hyperledger/orderer/tls/ca.crt]'
+        - name: CORE_VM_DOCKER_HOSTCONFIG_DNS
+          value: 10.11.240.10
+        image: hyperledger/fabric-orderer
+        name: orderer-myapp
+        ports:
+        - containerPort: 7050
+        resources: {}
+        volumeMounts:
+        - name: my-pvc-nfs
+          mountPath: /var/hyperledger/orderer/msp 
+          subPath: crypto-config/ordererOrganizations/orderer-myapp/orderers/orderer-myapp/msp
+        - mountPath: /var/hyperledger/orderer/orderer.genesis.block
+          name: my-pvc-nfs
+          subPath: channel-artifacts/genesis.block 
+        - mountPath: /var/hyperledger/orderer/tls
+          name: my-pvc-nfs
+          subPath: crypto-config/ordererOrganizations/orderer-myapp/orderers/orderer-myapp/tls
+        workingDir: /opt/gopath/src/github.com/hyperledger/fabric
+      restartPolicy: Always
+      volumes:
+      - name: my-pvc-nfs
+        persistentVolumeClaim:
+          claimName: nfs
